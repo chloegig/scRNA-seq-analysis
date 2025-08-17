@@ -1,7 +1,7 @@
 # Lung Cancer VISTA single cell RNA seq analysis
 # GSE176091 from https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176091 
-# developed by Chloe Giglio
-# last updated 2/23/25
+# developed by /Chloe Giglio
+# last updated 8/17/2025
 
 
 #
@@ -1523,3 +1523,4 @@ if (length(missing_genes) > 0) {
 #
 
 knitr::stitch('scrna_seq_LC - Copy.r')
+
