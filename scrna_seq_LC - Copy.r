@@ -80,7 +80,7 @@ options(stringsAsFactors = FALSE)
 
 
 # set the working directory
-setwd("C:/Users/wendy/Documents/LC") 
+setwd("C:/Documents/LC") 
 set.seed(1383)
 
 
@@ -237,8 +237,6 @@ DimPlot(lung_CD45, label = FALSE, reduction="umap", split.by = "orig.ident")
 ### Save and read Seurat object
 ##
 #
-
-
 
 
 # This point marks all the pre-processing for this analysis. 
@@ -1523,4 +1521,5 @@ if (length(missing_genes) > 0) {
 #
 
 knitr::stitch('scrna_seq_LC - Copy.r')
+
 
