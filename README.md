@@ -1,7 +1,3 @@
-Complete single-cell RNA sequencing analysis of a publicly available dataset (GSE176091)
-Includes: preprocessing (quality control, normalization, PCA, cell clustering and identification), CellChat analysis, proportion analysis, pathway analysis
-
-
 # scRNA-seq Analysis: Combination Therapy of VISTA Inhibitor CA170 and KRAS Vaccine in Non-small Cell Lung Cancer 
 
 Computational secondary analysis of publicly available single-cell RNA sequencing
