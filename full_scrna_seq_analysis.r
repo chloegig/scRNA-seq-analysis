@@ -163,13 +163,13 @@ lung_CD45 <- ScaleData(lung_CD45, features = all_genes45)
 
 #
 ##
-### Run Principle Component Analysis (PCA) and Uniform Manifold Approximation and Projection (UMAP)
+### Run Principal Component Analysis (PCA) and Uniform Manifold Approximation and Projection (UMAP)
 ##
 #
 
 # Run PCA
 lung_CD45 <- RunPCA(lung_CD45, features = VariableFeatures(object = lung_CD45))
-# this plots the PCA according to principle component 1 and principle component 2
+# this plots the PCA according to principal component 1 and principal component 2
 DimPlot(lung_CD45, reduction = "pca")
 # Visualization of PCA between treatment groups. In particular, look for whether any samples are very underrepresented
 DimPlot(lung_CD45, reduction = "pca", split.by = "orig.ident")
@@ -332,7 +332,7 @@ Tcell_subcluster  <- RenameIdents(Tcell_subcluster, new.cluster.ids.CD45Tid)
 #Tcell_subcluster <- SetIdent(Tcell_subcluster, value = 'cell_type')
 # assign colors to each cell type
 cols <- c("Helper T" = "orange", "CD8+/CD4+ Naive" = "skyblue", "CD8+ Naive" = "seagreen", "CD8+/CD4+ Mem eff" = "yellow", "CD8+ CTL" = "dodgerblue4", "CD4+ CTL" = "orangered2")
-# visualize B cell types separated by treatment group
+# visualize T cell types separated by treatment group
 DimPlot(object = Tcell_subcluster,  label.size = 4, raster = FALSE,  split.by = "orig.ident", cols = cols)
 # combine cell types into separate objects
 HelperT <- subset(Tcell_subcluster, ident = "Helper T")
@@ -408,7 +408,7 @@ pathways.show <- c("MHC-I","SELPLG","CCL","CD52" ,"CD45","MHC-II" ,"MIF","CD22",
 netAnalysis_contribution(cellChat_full, signaling = pathways.show)
 
 # Save the CellChat object
-saveRDS(cellChat_fullT, file = "cellchat_fullT.rds")
+saveRDS(cellChat_full, file = "cellchat_full.rds")
 
 ### Visualize top receptors and ligands
 # top 20 receptors
@@ -858,7 +858,7 @@ new.cluster.ids.CD45Tid <- c("Helper T", "CD8+/CD4+ Naive", "Helper T", "CD8+/CD
 names(new.cluster.ids.CD45Tid) <- levels(Tcell_subcluster)
 Tcell_subcluster  <- RenameIdents(Tcell_subcluster, new.cluster.ids.CD45Tid)
 
-# visualize B cell types separated by treatment group
+# visualize T cell types separated by treatment group
 cols <- c("Helper T" = "orange", "CD8+/CD4+ Naive" = "skyblue", "CD8+ Naive" = "seagreen", "CD8+/CD4+ Mem eff" = "yellow", "CD8+ CTL" = "dodgerblue4", "CD4+ CTL" = "orangered2")
 DimPlot(object = Tcell_subcluster,  label.size = 4, raster = FALSE,  split.by = "orig.ident", cols = cols)
 
