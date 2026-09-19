@@ -4,46 +4,6 @@
 # last updated 8/17/2025
 
 
-#
-##
-####
-#######
-########### Preprocessing 
-#######
-####
-##
-#
-
-
-#
-##
-### Run when starting up
-##
-#
-
-install.packages(c('tidyverse', 'pheatmap'))
-install.packages(c('RColorBrewer','scales', 'cowplot','patchwork','grid','gridExtra','harmony','ggplot2',
-                   'dplyr','NMF'))
-install.packages(c('ggalluvial', 'data.table'))
-
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("clusterProfiler")
-BiocManager::install("dittoSeq")
-install.packages(c('ggdendro','tidyr', 'reshape'))
-install.packages('ggplot2')
-BiocManager::install("enrichplot")
-BiocManager::install("pathview")
-BiocManager::install("LRBaseDbi")
-BiocManager::install("AnnotationHub")
-BiocManager::install("grid")
-BiocManager::install("ComplexHeatmap")
-BiocManager::install("BiocNeighbors")
-install.packages('devtools')
-devtools::install_github("sqjin/CellChat")
-BiocManager::install("Seurat")
-
-
 # Downloading Packages and Setting Working Directory
 ```{r}
 library(tidyverse)
@@ -78,7 +38,6 @@ library (ComplexHeatmap)
 library (ggpubr)
 options(stringsAsFactors = FALSE)
 
-
 # set the working directory
 setwd("C:/Documents/LC") 
 set.seed(1383)
@@ -86,7 +45,7 @@ set.seed(1383)
 
 #
 ##
-### Creating Seurat object
+### Data Processing
 ##
 #
 
@@ -155,7 +114,6 @@ list.files(data_dir)
 CD45_CA170_KVax_2 <- Read10X(data.dir = data_dir)
 CD45_CA170_KVax_2 <- CreateSeuratObject(counts=CD45_CA170_KVax_2, project= "CD45_CA170_KVax_2")
 
-
 # merge the different treatment objects into one object to analyze them together
 # add.cell.ids labels each individual condition
 lung_CD45 <- merge(x= CD45_Control_1, y=c(CD45_Control_2, CD45_Adjuvant_1, CD45_Adjuvant_2, 
@@ -167,7 +125,7 @@ lung_CD45 <- merge(x= CD45_Control_1, y=c(CD45_Control_2, CD45_Adjuvant_1, CD45_
 
 #
 ##
-### Quality Control (QC)
+### Quality Control 
 ##
 #
 
@@ -231,22 +189,6 @@ lung_CD45 <- RunUMAP(lung_CD45, dims = 1:15)
 # Visualize UMAP
 DimPlot(lung_CD45, label = FALSE, reduction="umap", split.by = "orig.ident")
 
-
-#
-##
-### Save and read Seurat object
-##
-#
-
-
-# This point marks all the pre-processing for this analysis. 
-# Save the RDS file to access this seurat object for analysis. 
-saveRDS(lung_CD45, file = "scrna_seq_LC45.rds")
-
-# Read file
-lung_CD45 <- readRDS("scrna_seq_LC45.rds")
-
-
 # combine idents (treatment groups) of lung_CD45. This combines CD45_Control_1 and CD45_Control_2
 # into one ident called Control, etc.
 lung_CD45 <- SetIdent(lung_CD45, value = 'orig.ident')
@@ -266,15 +208,18 @@ lung_CD45[['orig.ident']] <- Idents(lung_CD45)
 #set ident to seurat clusters
 lung_CD45 <- SetIdent(lung_CD45, value = 'seurat_clusters')
 
+# This point marks all the pre-processing for this analysis. 
+# Save the RDS file to access this seurat object for analysis. 
+saveRDS(lung_CD45, file = "scrna_seq_LC45.rds")
+
+# Read file
+lung_CD45 <- readRDS("scrna_seq_LC45.rds")
+
 
 #
 ##
-####
-#######
-########### Sub clustering and identifying cell types in the CD45+ object
-#######
-####
-##
+### Cell Annotation in the CD45+ object
+## 
 #
 
 # Find the markers that define each cluster and save data in a csv file
@@ -284,17 +229,14 @@ lung_CD45_markers %>% group_by(cluster) %>% top_n(n=25, wt = avg_log2FC)
 # save the markers in a comma-separated values table that can be accessed in excel
 write.csv(lung_CD45_markers, file = "lung_CD45_markers.csv")
 
-
 # dotplot for CD45 cluster identification based on key gene markers
 plot<-DotPlot (object = lung_CD45, features=c("Cd3d","Cd3g", "S100a9", "Bank1", "Cd79a", "Cd79b", 
                                               "Klrd1", "Lyz2", "Chil3", "Lpl", "Wfdc17", 
                                               "Siglech"), dot.scale = 7, cols = c("lightgrey", "blue"), scale=T)
 plot + theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-
+# Cell type determined by students' discretion, using violin plot and dot plot visualizations of canonical gene markers of specific cell types
 # rename clusters of CD45 according to cell type
-# list out the cluster names in order and with the same spelling 
-# IMPORTANT: the length of this list MUST match the number of total clusters 
 #lung_CD45 <- SetIdent(lung_CD45, value = 'RNA_snn_res.1.5')
 new.cluster.ids.CD45id <- c("B cell", "B cell", "T cell", "B cell", "T cell", "Neutrophil", "T cell", "T cell",
                             "Myeloid", "NK cell", "T cell", "Myeloid", "T cell", "Neutrophil", "Myeloid",
@@ -307,18 +249,18 @@ lung_CD45  <- RenameIdents(lung_CD45, new.cluster.ids.CD45id)
 #lung_CD45[['RNA_snn_res.1.5']] <- Idents(lung_CD45)
 #lung_CD45 <- SetIdent(lung_CD45, value = 'cell_type')
 
+# visualize cell clusters separated by treatment group
 colors <- c("B cell" = "coral2", "Dendritic cell" = "magenta", "Myeloid" ="springgreen4", 
             "Neutrophil" = "olivedrab3", "NK cell" ="cyan3", "NKT cell" = "mediumpurple1", "T cell" = "darkgoldenrod3")
-
-# visualize cell clusters separated by treatment group
 DimPlot(lung_CD45, label = FALSE, split.by= "orig.ident", cols = colors)
 
 #
 ##
-### proportions 
+### Proportion Analysis
 ##
 #
-#overall
+
+### overall
 # combine cell types into separate objects
 Bcell <- subset(lung_CD45, ident = "B cell")
 Tcell <- subset(lung_CD45, ident = c("T cell"))
@@ -335,7 +277,7 @@ cell_counts <- table(metadata$RNA_snn_res.1.5, metadata$orig.ident)
 print(cell_counts)
 
 
-#B cells
+### B cells
 Bcell_subcluster <- readRDS("Bcell_subcluster.rds")
 Bcell_subcluster <- SetIdent(Bcell_subcluster, value = 'orig.ident')
 #Bcell_subcluster<- RenameIdents(Bcell_subcluster, 'Control' ='Control', 'Adjuvant' = 'Adjuvant',
@@ -366,7 +308,7 @@ cell_counts <- table(metadata$RNA_snn_res.0.5, metadata$orig.ident)
 print(cell_counts)
 
 
-#T cells
+### T cells
 Tcell_subcluster <- readRDS("Tcell_subcluster.rds")
 Tcell_subcluster <- SetIdent(Tcell_subcluster, value = 'orig.ident')
 Tcell_subcluster<- RenameIdents(Tcell_subcluster, 'CD45_Control_1' = 'Control',
@@ -406,33 +348,21 @@ print(cell_counts)
 
 #
 ##
-####
-#######
-########### CellChat analysis on CD45+ object
-#######
-####
+### CellChat Analysis
 ##
 #
 
-# normalize data matrix
+# Create CellChat object
 data.input <- lung_CD45[["RNA"]]$data
-# add labels for the treatment groups
 labels <- Idents(lung_CD45)
-# create a dataframe of the cell labels
 meta <- data.frame(labels = labels, row.names = names(labels)) 
-#create CellChat object
 cellChat_full <- createCellChat(object = lung_CD45, group.by = "ident", assay = "RNA") 
-
-# add metadata
 cellChat_full <- addMeta(cellChat_full, meta = meta)
-# set "labels" as default cell identity
 cellChat_full <- setIdent(cellChat_full, ident.use = "labels")
-# show factor levels of the cell labels
 levels(cellChat_full@idents) 
-# number of cells in each cell group
 groupSize <- as.numeric(table(cellChat_full@idents)) 
 
-#subsetting out the genes that are not contained in the CD45+ object  
+# Subset out the genes that are not contained in the CD45+ object  
 gene_data <- cellChat_full@data
 genes_to_remove <- c("H2-BI", "H2-Ea-ps")
 subset_gene_data <- gene_data[!rownames(gene_data) %in% genes_to_remove, ]
@@ -442,26 +372,23 @@ cellChat_full@data <- subset_gene_data
 CellChatDB <- CellChatDB.mouse 
 showDatabaseCategory(CellChatDB)
 CellChatDB.use <- subsetDB(CellChatDB)
-# Ensure other related slots are also updated if necessary. For example, the CellChatDB interaction data
 filtered_interactions <- CellChatDB$interaction$ligand.receptor[!(CellChatDB$interaction$ligand.receptor[, "ligand"] %in% genes_to_remove | CellChatDB$interaction$ligand.receptor[, "receptor"] %in% genes_to_remove), ]
 CellChatDB$interaction$ligand.receptor <- filtered_interactions
 cellChat_full@DB <- CellChatDB
 
-#Preprocessing the expression data for cell-cell communication analysis
-# subset the expression data of signaling genes for saving computation cost
+# Preprocessing expression data for cell-cell communication analysis
 cellChat_full <- subsetData(cellChat_full)
 future::plan("multisession", workers = 4) # do parallel
 
-# set the global max size to accomodate all the memory
+# Troubleshooting: set the global max size to accommodate all the memory
 options(future.globals.maxSize = 1 * 1024^6)
 cellChat_full <- identifyOverExpressedGenes(cellChat_full)
 cellChat_full <- identifyOverExpressedInteractions(cellChat_full)
 
-#Compute the communication probability and infer cellular communication network
+# Compute the communication probability and infer cellular communication network
 cellChat_full <- computeCommunProb(cellChat_full, type = "triMean")
 cellChat_full <- filterCommunication(cellChat_full, min.cells = 10)
-
-#Infer the cell-cell communication at a signaling pathway level
+# Infer the cell-cell communication at a signaling pathway level
 cellChat_full <- computeCommunProbPathway(cellChat_full)
 
 #Calculate the aggregated cell-cell communication network
@@ -470,11 +397,9 @@ groupSize <- as.numeric(table(cellChat_full@idents))
 par(mfrow = c(1,2), xpd=TRUE)
 netVisual_circle(cellChat_full@net$weight, vertex.weight = groupSize, weight.scale = T, label.edge= F, title.name = "Interaction weights/strength")
 
-# View the available pathways
-significant_pathways <- cellChat_full@netP$pathways
+# Select the most highly expressed pathways for downstream analyses
+significant_pathways <- cellChat_full@netP$pathways # View the available pathways
 print(significant_pathways)
-
-# choose the most highly expressed pathways
 pathways.show <- c("MHC-I","SELPLG","CCL","CD52" ,"CD45","MHC-II" ,"MIF","CD22","SPP1" ,"APP", "BST2") 
 
 # Compute the contribution of each ligand-receptor pair to the overall signaling pathway 
@@ -483,23 +408,17 @@ netAnalysis_contribution(cellChat_full, signaling = pathways.show)
 # Save the CellChat object
 saveRDS(cellChat_fullT, file = "cellchat_fullT.rds")
 
-
-# heatmaps of the top receptors and ligands
+### Visualize top receptors and ligands
 # top 20 receptors
 genes_of_interest <- c("Sell", "Cd8b1", "Siglecg", "Cd8a", "Cd8a", "Ccr1", "Mrc1", "Cd22", "Ptprc", "Cd74",
                        "Ccr1", "Pira2", "Ccr5", "Klrd1", "Klrc2", "Ccr2", "Cxcr4", "Cd44", "Cd4", "Itga4")
-
 # top 20 ligands
 genes_of_interest <-c("Selplg", "H2-D1", "H2-K1", "Cd52", "Ccl5", "Ptprc", "Cd22", "H2-T23", "H2-Q7", 
                       "App", "Ccl6", "Bst2", "Mif", "Spp1", "H2-Aa", "H2-Ab1", "H2-Eb1", "H2-T22", 
                       "H2-DMa", "H2-Q6")
-genes_of_interest <- c("H2-D1", "H2-K1", "H2-T23", "H2-Q7","H2-Aa", "H2-Ab1", "H2-Eb1", "H2-T22", 
-                       "H2-DMa", "H2-Q6")
 
 expression_data <- FetchData(lung_CD45, vars = genes_of_interest)
-
-#get metadata for treatment groups from object
-treatment_groups <- unique(lung_CD45@meta.data$orig.ident)
+treatment_groups <- unique(lung_CD45@meta.data$orig.ident) #get metadata for treatment groups from object
 print(treatment_groups)
 # Initialize a matrix to store the mean expression values
 expression_by_group <- matrix(nrow = length(genes_of_interest), ncol = length(treatment_groups))
@@ -524,93 +443,82 @@ pheatmap(expression_by_group,
          angle_col = "0", 
          fontsize_col = 12)
 
-
 #
 ##
-####
-#######
-########### CD45+ B cell analysis
-#######
-####
+### CD45+ B cell analysis
 ##
 #
 
-#
-##
-### sub clustering and identifying cell types in B cell object
-##
-#
+### Cell Annotation of B cell object
 
-# sub setting CD45 object for B cells 
+# subset CD45 object for B cells only
 Bcell_subcluster <- subset(lung_CD45, idents="B cell")
-# sub clustering B cell object for more specific cell types
+
+# cluster B cells and visualize (UMAP)
 Bcell_subcluster <- FindNeighbors(Bcell_subcluster, dims = 1:6)
 Bcell_subcluster <- FindClusters(Bcell_subcluster, resolution = 0.5)
-# make UMAP B cells
 Bcell_subcluster <- RunUMAP(Bcell_subcluster, dims = 1:6)
 DimPlot(Bcell_subcluster, label = TRUE, reduction="umap")
-# save sub cluster
 saveRDS(Bcell_subcluster, file = "Bcell_subcluster.rds")
 Bcell_subcluster <- readRDS("Bcell_subcluster.rds")
-# find markers
+
+# Find gene markers per cluster
 CD45_Bcell_markers <- FindAllMarkers(Bcell_subcluster, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-# arranges the data nicely
 CD45_Bcell_markers %>% group_by(cluster) %>% top_n(n=25, wt = avg_log2FC)
-# saves the markers in a comma-separated values table that can be accessed in excel
 write.csv(CD45_Bcell_markers, file = "CD45_Bcell_markers.csv")
-#save Bcell45_markers
 saveRDS(CD45_Bcell_markers, file = "CD45_Bcell_markers.rds")
 CD45_Bcell_markers <- readRDS("CD45_Bcell_markers.rds")
 
-# identifying sub clusters with dotplot and key genes
-plot<-DotPlot (object = Bcell_subcluster, dot.scale = 7, cols = c("lightgrey", "blue"), scale=T, 
+# B cell subtypes determined by students' discretion, using violin plot and dot plot visualizations of canonical gene markers
+# Visualize most important gene markers of B cell subtypes in dotplot
+plot<- DotPlot (object = Bcell_subcluster, dot.scale = 7, cols = c("lightgrey", "blue"), scale=T, 
                features=c("Ms4a1", "Cd19", "Sell", "Cd79a", "Cd79b", "Cd40", "Cr2", "Lmo2", "Bank1", 
                           "Il4ra", "Fcer2a", "Bach2","Mzb1", "Tnfrsf17" , "Sdc1", "Jchain", "Ebf1", 
                           "Cd24a", "Eif4ebp1","Tnfrsf13c", "Ltb", "Ctsh", "Ly6a", "Bcl2", "Fcrl1"))
 plot + theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-# renaming B cell clusters
+# Renaming B cell clusters
 new.cluster.id.Bcell_subclusterid <- c("memory", "memory", "follicular", "follicular", "follicular", "follicular", "plasma cell", "memory", "plasma cell")
 names(new.cluster.id.Bcell_subclusterid) <- levels(Bcell_subcluster) 
 Bcell_subcluster  <- RenameIdents(Bcell_subcluster, new.cluster.id.Bcell_subclusterid)
-# assign colors to cell types 
-cols <- c("memory" = "orange", "follicular" = "skyblue", "plasma cell" = "seagreen")
+
 # visualize B cell types separated by treatment group
+cols <- c("memory" = "orange", "follicular" = "skyblue", "plasma cell" = "seagreen")
 DimPlot(Bcell_subcluster, label.size = 4, raster = FALSE, split.by="orig.ident", cols = cols)
 
-# combine cell types into separate objects
+# combine cell types into separate objects to use in pathway analysis
 follicular <- subset(Bcell_subcluster, ident = "follicular")
 memory <- subset(Bcell_subcluster, ident = "memory")
 plasma <- subset(Bcell_subcluster, ident = "plasma cell")
 
 # save Bcell_subcluster
-saveRDS(Bcell_subcluster, file = "Bcell_subcluster.rds")
-Bcell_subcluster <- readRDS("Bcell_subcluster.rds")
 Bcell_subcluster <- SetIdent(Bcell_subcluster, value = 'orig.ident')
 Bcell_subcluster<- RenameIdents(Bcell_subcluster, 'Control' ='Control', 'Adjuvant' = 'Adjuvant',
-                                'CA170' = 'CA170', 'Kvax' = 'Kvax', 'CA170_KVax' = 'Combo')
+                                'CA170' = 'CA170', 'Kvax' = 'Kvax', 'CA170_KVax' = 'Combo') # rename Combo group in metadata for ease of reference
 Bcell_subcluster[['orig.ident']] <- Idents(Bcell_subcluster)
+saveRDS(Bcell_subcluster, file = "Bcell_subcluster.rds")
+Bcell_subcluster <- readRDS("Bcell_subcluster.rds")
 
-#
-##
+### Proportions of each B cell subtype
+dittoBarPlot(object = Bcell_subcluster, var = "RNA_snn_res.0.5", group.by = "orig.ident", 
+             var.labels.rename = new.cluster.id.Bcell_subclusterid, data.out = TRUE, x.reorder = c(4,1,2,5,3))
+
+
 ### Heatmap for cell subtype markers
-##
-#
 
-#memory markers
+# memory markers
 genes_of_interest <- c("Cd80","Cd19" ,"Cd27", "Cd38", "Cd40", "Pax5", "Spib")
-#plasma markers
+# plasma markers
 genes_of_interest <- c("Cd19", "Cd27", "Cd38", "Cd93", "Cxcr4", "Ly6k", "Irf4", "Xbp1")
-#follicular markers
+# follicular markers
 genes_of_interest<- c("Cd19", "Cd22", "Cd38", "Cd93", "Cxcr5")
 
 expression_data <- FetchData(Bcell_subcluster, vars = genes_of_interest)
 
-#get metadata for treatment groups from object
-treatment_groups <- unique(Bcell_subcluster@meta.data$orig.ident)
-print(treatment_groups)
-# Initialize a matrix to store the mean expression values
-expression_by_group <- matrix(nrow = length(genes_of_interest), ncol = length(treatment_groups))
+# Prepare inputs for heatmap 
+treatment_groups <- unique(Bcell_subcluster@meta.data$orig.ident) # get metadata for treatment groups from object
+print(treatment_groups) 
+expression_by_group <- matrix(nrow = length(genes_of_interest), ncol = length(treatment_groups)) # Initialize a matrix to store the mean expression values
 rownames(expression_by_group) <- genes_of_interest
 colnames(expression_by_group) <- treatment_groups
 
@@ -632,10 +540,9 @@ pheatmap(expression_by_group,
          color = colorRampPalette(c("blue", "white", "red"))(50), name = "Expression",
          angle_col = "0", fontsize_col = 12)
 
-### troubleshooting if index out of range 
+# Troubleshooting: if index out of range 
 treatment_groups <- unique(Bcell_subcluster@meta.data$orig.ident)
 print(treatment_groups)
-
 expression_data <- GetAssayData(Bcell_subcluster, slot = "data")
 missing_genes <- setdiff(genes_of_interest, rownames(expression_data))
 if (length(missing_genes) > 0) {
@@ -643,22 +550,13 @@ if (length(missing_genes) > 0) {
 }
 
 
-#
-##
 ### Pathway analysis
-##
-#
 
-
-# bargraph depicting the percent composition of each B cell type
-dittoBarPlot(object = Bcell_subcluster, var = "RNA_snn_res.0.5", group.by = "orig.ident", 
-             var.labels.rename = new.cluster.id.Bcell_subclusterid, data.out = TRUE, x.reorder = c(4,1,2,5,3))
 
 # Most gene signatures were obtained from the Gene Ontology (GO) database. Refer to my paper references for
 # the past literature from which I obtained the gene signatures not found in the GO database. 
 
 ## B cell proliferation
-# create a list of genes associated with B cell proliferation
 genes <- c("Abl1", "Ada", "Ahr", "Atad5", "Bax", "Bcl2", "Bcl6", "Bmi1", "Bst1", "Card11", "Cd19", 
            "Cd22", "Cd27", "Cd38", "Cd40", "Cd40lg", "Cd70", "Cd74", "Cd79a", "Cd81", "Cd180", "Cd320",
            "Cdkn1a", "Cfb", "Chrnb2", "Clcf1", "Cr2", "Ephb2", "Fosl2", "Gapt", "Gm13271", "Gm13272", 
@@ -669,12 +567,12 @@ genes <- c("Abl1", "Ada", "Ahr", "Atad5", "Bax", "Bcl2", "Bcl6", "Bmi1", "Bst1",
            "Nfatc2", "Nfkbiz", "Ntn1", "Plcl2", "Prkcd", "Prlr", "Ptprc", "Rag2", "Rasgrp1", "Sash3", "Shb", 
            "Siglecg", "Slc39a10", "Tcf3", "Tfrc", "Ticam1", "Tirap", "Tlr4", "Tlr9", "Tnfrsf4", "Tnfrsf13c", 
            "Tnfsf13b", "Vav3","Wnt3a")
-# calculate average expression of each gene and average it
+# calculate average expression of each gene 
 memory <- AddModuleScore(memory, features=list(genes), name= "Bcellproliferation")
-# assign consistent colors associated with each treatment group
+
+# visualize the average gene expression in each treatment group
 cols <- c("Control" = "lightblue", "Adjuvant" = "darkorange", "CA170" = "forestgreen","Kvax"= "purple","Combo" = "gold2")
 cols <- c("memory" = "orange", "follicular" = "skyblue", "plasma cell" = "seagreen")
-# visualize the average gene expression in each treatment group
 VlnPlot(memory,features= "Bcellproliferation1", pt.size = 0, group.by = "orig.ident", col=cols, y.max=0.5) +
   stat_summary(fun.y = median, geom='point', size = 15, colour = "black", shape = 95)+
   geom_boxplot(width=0.1, fill="white") +
@@ -710,6 +608,7 @@ VlnPlot(memory,features= "Bcellproliferation1", pt.size = 0, group.by = "orig.id
     y_position = 0.45,
     tip_length=0.02
   )
+# Find the median of each treatment group
 df <- FetchData(Bcell_subcluster, vars = c("Bcellproliferation1", "orig.ident"))
 medians <- aggregate(Bcellproliferation1 ~ orig.ident, data = df, FUN = mean)
 print(medians)
@@ -881,15 +780,7 @@ medians <- aggregate(plasmaPosDifferentiation1 ~ orig.ident, data = df, FUN = me
 print(medians)
 
 
-#
-##
-### Statistical testing
-##
-#
-
-
-# Creating the csv files for statistical testing. The csv file contains the gene expression level for
-# each gene across all treatment groups.
+### Statistical testing of pathway analysis
 
 # proliferation
 data <- data.table(x1 = Bcell_subcluster$RNA_snn_res.0.5,
@@ -911,7 +802,6 @@ data <- data.table(x1 = memory$orig.ident,
                    x2=memory$memMemoryDifferentiation1)
 write.csv(data, "memory_memMemoryDifferentiation1_for_stats.csv")
 
-
 # plasma differentiation
 data <- data.table(x1 = Bcell_subcluster$orig.ident,
                    x2=Bcell_subcluster$PlasmaPosDifferentiation1)
@@ -920,19 +810,12 @@ write.csv(data, "Bcellsubcluster_PlasmaPosDifferentiation1_for_stats.csv")
 
 #
 ##
-####
-#######
-########### CD45+ T cell analysis
-#######
-####
+### CD45+ T cell analysis
 ##
 #
 
-#
-##
-### sub clustering and identifying cell types in T cell object
-##
-#
+
+### Cell Annotation of T cell object
 
 Tcell_subcluster <- readRDS("Tcell_subcluster.rds")
 Tcell_subcluster <- SetIdent(Tcell_subcluster, value = 'orig.ident')
@@ -942,33 +825,24 @@ Tcell_subcluster<- RenameIdents(Tcell_subcluster, 'CD45_Control_1' = 'Control',
                                 'CD45_CA170_2' = 'CA170',  'CD45_Kvax_1' = 'Kvax',
                                 'CD45_Kvax_2' = 'Kvax', 'CD45_CA170_KVax_1' = 'CA170_Kvax',
                                 'CD45_CA170_KVax_2' = 'CA170_Kvax')
-# Stash cell identity genotypes)
 Tcell_subcluster[['orig.ident']] <- Idents(Tcell_subcluster)
-#set ident to seurat clusters
 Tcell_subcluster <- SetIdent(Tcell_subcluster, value = 'seurat_clusters')
-# renaming T cell clusters 
 new.cluster.ids.CD45Tid <- c("Helper T", "CD8+/CD4+ Naive", "Helper T", "CD8+/CD4+ Naive", 
                              "Helper T", "CD8+ Naive", "CD8+/CD4+ Mem eff", "CD8+ CTL", "CD4+ CTL")
 names(new.cluster.ids.CD45Tid) <- levels(Tcell_subcluster)
 Tcell_subcluster  <- RenameIdents(Tcell_subcluster, new.cluster.ids.CD45Tid)
 #Tcell_subcluster[['RNA_snn_res.0.5']] <- Idents(Tcell_subcluster)
 #Tcell_subcluster <- SetIdent(Tcell_subcluster, value = 'cell_type')
-# assign colors to each cell type
-cols <- c("Helper T" = "orange", "CD8+/CD4+ Naive" = "skyblue", "CD8+ Naive" = "seagreen", "CD8+/CD4+ Mem eff" = "yellow", "CD8+ CTL" = "dodgerblue4", "CD4+ CTL" = "orangered2")
-# visualize B cell types separated by treatment group
-DimPlot(object = Tcell_subcluster,  label.size = 4, raster = FALSE,  split.by = "orig.ident", cols = cols)
 
-# find markers
+# Find gene markers
 CD45_Tcell_markers <- FindAllMarkers(Tcell_subcluster, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
-# arranges the data nicely
 CD45_Tcell_markers %>% group_by(cluster) %>% top_n(n=25, wt = avg_log2FC)
-# saves the markers in a comma-separated values table that can be accessed in excel
 write.csv(CD45_Tcell_markers, file = "CD45_Tcell_markers.csv")
-#save Tcell45_markers
 saveRDS(CD45_Tcell_markers, file = "CD45_Tcell_markers.rds")
 CD45_Tcell_markers <- readRDS("CD45_Tcell_markers.rds")
 
-# identifying sub clusters with dotplot and key genes
+# B cell subtypes determined by students' discretion, using violin plot and dot plot visualizations of canonical gene markers
+# Visualize most important gene markers of B cell subtypes in dotplot
 plot<- DotPlot (object = Tcell_subcluster, dot.scale = 10, cols = c("lightgrey", "blue"), scale=T, 
          features=c("Cd4", "Cd8b1", "Cd8a", "Sell", "Dapl1", "S1pr1", "Ccr7", "Lef1","Icos", "Cxcr5", "Cd44", 
                     "Cxcr6", "Lgals3", "Itgb1", "Ccr2", "Itgae", "Foxp3", "Il2ra", "Ikzf2", 
@@ -981,12 +855,12 @@ new.cluster.ids.CD45Tid <- c("Helper T", "CD8+/CD4+ Naive", "Helper T", "CD8+/CD
                            "Helper T", "CD8+ Naive", "CD8+/CD4+ Mem eff", "CD8+ CTL", "CD4+ CTL")
 names(new.cluster.ids.CD45Tid) <- levels(Tcell_subcluster)
 Tcell_subcluster  <- RenameIdents(Tcell_subcluster, new.cluster.ids.CD45Tid)
-# assign colors to each cell type
-cols <- c("Helper T" = "orange", "CD8+/CD4+ Naive" = "skyblue", "CD8+ Naive" = "seagreen", "CD8+/CD4+ Mem eff" = "yellow", "CD8+ CTL" = "dodgerblue4", "CD4+ CTL" = "orangered2")
+
 # visualize B cell types separated by treatment group
+cols <- c("Helper T" = "orange", "CD8+/CD4+ Naive" = "skyblue", "CD8+ Naive" = "seagreen", "CD8+/CD4+ Mem eff" = "yellow", "CD8+ CTL" = "dodgerblue4", "CD4+ CTL" = "orangered2")
 DimPlot(object = Tcell_subcluster,  label.size = 4, raster = FALSE,  split.by = "orig.ident", cols = cols)
 
-# combine cell types into separate objects
+# Combine cell types into separate objects for pathway analysis
 HelperT <- subset(Tcell_subcluster, ident = "Helper T")
 NaiveT <- subset(Tcell_subcluster, ident = c("CD8+/CD4+ Naive", "CD8+ Naive"))
 Effector<- subset(Tcell_subcluster, ident = c("CD8+/CD4+ Mem eff", "CD8+ CTL", "CD4+ CTL"))
@@ -994,27 +868,28 @@ CTL <- subset (Tcell_subcluster, ident = c("CD8+ CTL", "CD4+ CTL"))
 CD8CTL <- subset (Tcell_subcluster, ident = "CD8+ CTL")
 CD4CTL <- subset (Tcell_subcluster, ident = "CD4+ CTL")
 
+### Proportions of each T cell subtype
+dittoBarPlot(object = Tcell_subcluster, var = "RNA_snn_res.0.5", group.by = "orig.ident", 
+             var.labels.rename = new.cluster.ids.CD45Tid, data.out = TRUE, x.reorder =c(4,1,2,5,3))
 
-#
-##
+
 ### heatmap for subtypes based off markers
-##
-#
-#Naive markers
+
+
+# Naive markers
 genes_of_interest <- c("Cd44", "Ccr7", "Cd4", "Lef1", "Sell", "Il7r", "S1pr1", "Dapl1")
-#Helper markers
+# Helper markers
 genes_of_interest <- c("Cd4", "Cxcr5", "Icos", "Bcl6", "Gata3")
-#Mem eff markers
-genes_of_interest<- c("Cd44","Id3", "Stat3", "Slamf6", "Cd69", "Cxcr3", "Lgals1", "Lgals3", "Cxcr6", "Ccr2", "Bhlhe40", "Tbx21","Bcl6", "Id2", "Rora", "Ifng", "Il21", "Il4")
-#CTL markers
+# Mem eff markers
+genes_of_interest<- c("Cd44", "Id3", "Stat3", "Slamf6", "Cd69", "Cxcr3", "Lgals1", "Lgals3", "Cxcr6", "Ccr2", "Bhlhe40", "Tbx21", "Bcl6", "Id2", "Rora", "Ifng", "Il21", "Il4")
+# CTL markers
 genes_of_interest<- c("Cd69", "Cd44", "Gzmb", "Gzma", "Prf1")
 
 expression_data <- FetchData(Tcell_subcluster, vars = genes_of_interest)
 
-#get metadata for treatment groups from object
+# prepare inputs for heatmap
 treatment_groups <- unique(Tcell_subcluster@meta.data$orig.ident)
 print(treatment_groups)
-# Initialize a matrix to store the mean expression values
 expression_by_group <- matrix(nrow = length(genes_of_interest), ncol = length(treatment_groups))
 rownames(expression_by_group) <- genes_of_interest
 colnames(expression_by_group) <- treatment_groups
@@ -1047,23 +922,13 @@ if (length(missing_genes) > 0) {
 }
 
 
-#
-##
-### pathway analysis
-##
-#
+### Pathway Analysis
 
-
-# bargraph depicting the percent composition of each B cell type
-dittoBarPlot(object = Tcell_subcluster, var = "RNA_snn_res.0.5", group.by = "orig.ident", 
-             var.labels.rename = new.cluster.ids.CD45Tid, data.out = TRUE, x.reorder =c(4,1,2,5,3))
 
 # Most gene signatures were obtained from the Gene Ontology (GO) database. Refer to my paper references for
 # the past literature from which I obtained the gene signatures not found in the GO database. 
 
 ## helper T differentiation
-
-# Create a named vector for significance labels
 genes <- c("Anxa1", "Brd2", "Brd4", "Ccl19", "Ccr2", "Ccr7", "Ep300", "Hlx", "Il4ra", "Il6", "Il18", "Il23a", "Irf1", "Malt1", "Nfkbid", "Nfkbiz", "Nlrp3", "Prkcz", "Rara", "Ripk2", "Shb", "Socs5", "Tnfsf4")
 HelperT <- AddModuleScore(HelperT, features=list(genes), name= "Helper_Differentiation")
 my_colors <- c("Control" = "lightblue", "Adjuvant" = "darkorange", "CA170" = "forestgreen", "Kvax"= "purple", "Combo" = "gold")
@@ -1110,11 +975,10 @@ VlnPlot(HelperT,features= "Helper_Differentiation1", pt.size = 0, group.by ="ori
     y_position = 0.45,
     tip_length=0.03
   )
+
 # get median values
 df <- FetchData(HelperT, vars = c("Helper_Differentiation1", "orig.ident"))
-# Compute median for each group
 medians <- aggregate(Helper_Differentiation1 ~ orig.ident, data = df, FUN = median)
-# Print the median values
 print(medians)
 
 ## helper T immune response 
@@ -1407,12 +1271,8 @@ df <- FetchData(CTL, vars = c("CTL_degranulation_activation_tumorcytotoxicity1",
 medians <- aggregate(CTL_degranulation_activation_tumorcytotoxicity1 ~ orig.ident, data = df, FUN = mean)
 print(medians)
 
-#
-##
-### statistical testing 
-##
-#
 
+### Statistical testing for Pathway analysis
 
 # helper T immune response
 data <- data.table(x1 = HelperT$orig.ident,
@@ -1455,12 +1315,7 @@ data <- data.table(x1 = CTL$orig.ident,
 write.csv(data, "CTL_degranulation_activation_tumorcytotoxicity_cytokines_stats.csv")
 
 
-#
-##
-### heatmap
-##
-#
-
+### Visualization of specific T cell pathways
 
 ## Helper T cell activation + cytokine production
 genes_of_interest <- c("Cd81", "Dennd1b", "Gata3", "Il4", "Il6", "Nlrp3", "Prkcz", "Rsad2", "Arid5a", 
@@ -1472,10 +1327,9 @@ genes_of_interest <- c ("Cd44", "Cxcr4", "Ccr1", "Ccr5", "Ccr7")
 
 expression_data <- FetchData(HelperT, vars = genes_of_interest)
 
-#get metadata for treatment groups from object
+# prepare inputs for heatmap
 treatment_groups <- unique(HelperT@meta.data$orig.ident)
 print(treatment_groups)
-# Initialize a matrix to store the mean expression values
 expression_by_group <- matrix(nrow = length(genes_of_interest), ncol = length(treatment_groups))
 rownames(expression_by_group) <- genes_of_interest
 colnames(expression_by_group) <- treatment_groups
@@ -1509,17 +1363,10 @@ if (length(missing_genes) > 0) {
 }
 
 
-
 #
 ##
-####
-#######
-########### saving R file as PDF
-#######
-####
+### saving R file as PDF
 ##
 #
 
 knitr::stitch('scrna_seq_LC - Copy.r')
-
-
