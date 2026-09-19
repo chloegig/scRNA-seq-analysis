@@ -177,7 +177,9 @@ DimPlot(lung_CD45, reduction = "pca", split.by = "orig.ident")
 ElbowPlot(lung_CD45)
 
 # Cluster cells for UMAP
-# change dims to reflect the number of principal components. In this case, I used 15 PCs. 
+# change dims to reflect the number of principal components. 15 PCs were retained based on the 
+# elbow plot and inspection of variance explained. We intentionally overclustered at resolution
+# 1.5 before assigning broad immune-cell identities from canonical markers.
 lung_CD45 <- FindNeighbors(lung_CD45, dims = 1:15)
 # change the resolution based on clustering strategy
 # For normal clustering, use resolution = 0.5
