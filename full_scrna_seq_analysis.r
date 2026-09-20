@@ -573,6 +573,7 @@ genes <- c("Abl1", "Ada", "Ahr", "Atad5", "Bax", "Bcl2", "Bcl6", "Bmi1", "Bst1",
 memory <- AddModuleScore(memory, features=list(genes), name= "Bcellproliferation")
 
 # visualize the average gene expression in each treatment group
+# statistical significance was tested on GraphPad Prism (two-way ANOVA)
 cols <- c("Control" = "lightblue", "Adjuvant" = "darkorange", "CA170" = "forestgreen","Kvax"= "purple","Combo" = "gold2")
 cols <- c("memory" = "orange", "follicular" = "skyblue", "plasma cell" = "seagreen")
 VlnPlot(memory,features= "Bcellproliferation1", pt.size = 0, group.by = "orig.ident", col=cols, y.max=0.5) +
