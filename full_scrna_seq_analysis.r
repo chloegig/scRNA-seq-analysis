@@ -783,7 +783,7 @@ medians <- aggregate(plasmaPosDifferentiation1 ~ orig.ident, data = df, FUN = me
 print(medians)
 
 
-### Statistical testing of pathway analysis
+### Data exported for statistical testing in GraphPad Prism
 
 # proliferation
 data <- data.table(x1 = Bcell_subcluster$RNA_snn_res.0.5,
@@ -878,7 +878,6 @@ dittoBarPlot(object = Tcell_subcluster, var = "RNA_snn_res.0.5", group.by = "ori
 
 ### heatmap for subtypes based off markers
 
-
 # Naive markers
 genes_of_interest <- c("Cd44", "Ccr7", "Cd4", "Lef1", "Sell", "Il7r", "S1pr1", "Dapl1")
 # Helper markers
@@ -926,7 +925,6 @@ if (length(missing_genes) > 0) {
 
 
 ### Pathway Analysis
-
 
 # Most gene signatures were obtained from the Gene Ontology (GO) database. Refer to my paper references for
 # the past literature from which I obtained the gene signatures not found in the GO database. 
@@ -1275,7 +1273,7 @@ medians <- aggregate(CTL_degranulation_activation_tumorcytotoxicity1 ~ orig.iden
 print(medians)
 
 
-### Statistical testing for Pathway analysis
+### Data exported for statistical testing in GraphPad Prism
 
 # helper T immune response
 data <- data.table(x1 = HelperT$orig.ident,
